@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Video Recorder</title>
+  <style>
+    html {
+      height: 100%;
+    }
+    body {
+      height: 100%; margin: 0px; padding: 0px; background: white;
+      text-align: center;
+    }
+    video {
+      display: block; max-height: 100%; max-width: 100%; margin: auto;
+    }
+    button {
+      display: inline-block; width: 2em; margin-left: -1em;
+      position: absolute; bottom: 20px; left: 50%; background: none;
+      outline: none; border: none; font-size: 30px;  text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="data"></div>
+  <video muted></video>
+  <button type="button" onClick="start()">Start recording</button>
+
+  <script>
+
+    const timeDistanceSec = 5
+
+    const video = document.querySelector('video')
+    const button = document.querySelector('button')
+    const data = document.getElementsByClassName('data')[0]
+    data.innerHTML = 0
+
+    let isRecording = false
+    let media
+
+    const record = async () => {
+      try {
+        let stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}, audio: true})
+        video.srcObject = stream
+        video.play()
+
+        let partIndex = 1
+
+        media = new MediaRecorder(stream)
+        media.ondataavailable = (obj) => {
+          data.innerHTML += 1
+          const form = new FormData()
+          form.append('file', obj.data, `part-${partIndex}.webm`)
+          form.append('done', !isRecording)
+          fetch("https://192.168.18.191:3000/video/upload", {
+            method: "POST",
+            body: form // Blob
+         }).then(async (res) => {
+          const text = await res.text()
+          data.innerHTML += text
+         })
+
+         partIndex++
+        }
+        media.start(timeDistanceSec * 1000)
+      } catch (e) {
+        alert(e)
+      }
+    }
+
+    const start = () => {
+      if (!isRecording) {
+        button.innerHTML = 'Stop recording'
+        record()
+      } else {
+        button.innerHTML = 'Start recording'
+        video.pause()
+        video.srcObject = null
+        media.stop()
+      }
+      isRecording = !isRecording
+    }
+  </script>
+
+</body>
+</html>
