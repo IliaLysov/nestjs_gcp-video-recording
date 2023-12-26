@@ -30,6 +30,9 @@
   <button type="button" onClick="start()">Start recording</button>
 
   <script>
+    const videoUploadUrl = "{{ videoUploadUrl }}"
+
+    alert(videoUploadUrl)
 
     const timeDistanceSec = 5
 
@@ -55,7 +58,7 @@
           const form = new FormData()
           form.append('file', obj.data, `part-${partIndex}.webm`)
           form.append('done', !isRecording)
-          fetch("https://192.168.18.191:3000/video/upload", {
+          fetch(videoUploadUrl, {
             method: "POST",
             body: form // Blob
          }).then(async (res) => {
