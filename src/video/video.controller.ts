@@ -19,7 +19,7 @@ export class VideoController {
   @Render('video')
   video() {
     const netwerkInterfaces = os.networkInterfaces();
-    const baseUrl = `https://${netwerkInterfaces.en0[1].address}:${process.env.NEST_PORT}/video/upload`;
+    const baseUrl = `https://${netwerkInterfaces.en0[1].address}:${process.env.PORT}/video/upload`;
     return {
       videoUploadUrl: baseUrl,
     };

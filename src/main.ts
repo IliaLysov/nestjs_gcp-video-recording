@@ -4,9 +4,10 @@ import { createCA, createCert } from 'mkcert';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import * as os from 'os';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const PORT = process.env.NEST_PORT;
+  const PORT = process.env.PORT;
   const netwerkInterfaces = os.networkInterfaces();
   const primaryAddress = netwerkInterfaces.en0[1].address;
 
@@ -35,6 +36,12 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', '/public'));
   app.setBaseViewsDir(join(__dirname, '..', '/views'));
   app.setViewEngine('hbs');
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+    }),
+  );
 
   await app.listen(3000, async () => {
     console.log(`Server started on https://${primaryAddress}:${PORT}`);
