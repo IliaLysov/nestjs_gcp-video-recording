@@ -1,19 +1,16 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { VideoModule } from './video/video.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { AppController } from './app.controller';
+import { AuthModule } from './auth/auth.module';
+import { JwtModule } from '@nestjs/jwt';
 
+@Global()
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
-      imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          envFilePath: '.env',
-        }),
-      ],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
@@ -26,9 +23,21 @@ import { AppController } from './app.controller';
         synchronize: true,
       }),
     }),
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        isGlobal: true,
+      }),
+    }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     UserModule,
     VideoModule,
+    AuthModule,
   ],
+  exports: [UserModule, ConfigModule, JwtModule],
   controllers: [AppController],
 })
 export class AppModule {}

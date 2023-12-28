@@ -5,23 +5,24 @@ import {
   Post,
   Render,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { VideoService } from './video.service';
-import * as os from 'os';
+import { AuthGuard } from 'src/auth/auth.guart';
+import { getMainUrl } from 'src/utils/url';
 
 @Controller('video')
+@UseGuards(AuthGuard)
 export class VideoController {
   constructor(private readonly videoService: VideoService) {}
 
   @Get()
   @Render('video')
   video() {
-    const netwerkInterfaces = os.networkInterfaces();
-    const baseUrl = `https://${netwerkInterfaces.en0[1].address}:${process.env.PORT}/video/upload`;
     return {
-      videoUploadUrl: baseUrl,
+      videoUploadUrl: `${getMainUrl()}/video/upload`,
     };
   }
 

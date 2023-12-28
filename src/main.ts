@@ -3,14 +3,11 @@ import { AppModule } from './app.module';
 import { createCA, createCert } from 'mkcert';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import * as os from 'os';
 import { ValidationPipe } from '@nestjs/common';
+import { getMainUrl, primaryAddress } from './utils/url';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const PORT = process.env.PORT;
-  const netwerkInterfaces = os.networkInterfaces();
-  const primaryAddress = netwerkInterfaces.en0[1].address;
-
   const ca = await createCA({
     organization: 'NestJS',
     countryCode: 'GE',
@@ -36,6 +33,7 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', '/public'));
   app.setBaseViewsDir(join(__dirname, '..', '/views'));
   app.setViewEngine('hbs');
+  app.use(cookieParser());
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -44,7 +42,7 @@ async function bootstrap() {
   );
 
   await app.listen(3000, async () => {
-    console.log(`Server started on https://${primaryAddress}:${PORT}`);
+    console.log(`Server started on ${getMainUrl()}`);
   });
 }
 bootstrap();

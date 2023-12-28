@@ -10,30 +10,64 @@
       height: 100%;
     }
     body {
-      height: 100%; margin: 0px; padding: 0px; background: white;
-      text-align: center;
+      height: 100%;
+      margin: 0px;
+      padding: 0px;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+
     }
     video {
       display: block; max-height: 100%; max-width: 100%; margin: auto;
     }
+
     button {
-      display: inline-block; width: 2em; margin-left: -1em;
-      position: absolute; bottom: 20px; left: 50%; background: none;
-      outline: none; border: none; font-size: 30px;  text-align: center;
+      all: unset;
+      position: relative;
+      height: 60px;
+      width: 60px;
+      background-color: #7D8CA3;
+      border-radius: 50%;
+      margin-bottom: 30px;
     }
+
+    button::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      height: 80px;
+      width: 80px;
+      border-radius: 50%;
+      border: #7D8CA3 4px solid;
+    }
+
+    .stop {
+      height: 40px;
+      width: 40px;
+      background-color: red !important;
+      border-radius: 10% !important; 
+    }
+
+    .stop::after {
+      border: red 4px solid !important;
+    }
+
   </style>
 </head>
 <body>
 
   <div class="data"></div>
   <video muted></video>
-  <button type="button" onClick="start()">Start recording</button>
+  <button type="button" onClick="start()"></button>
 
   <script>
     const videoUploadUrl = "{{ videoUploadUrl }}"
-
     const timeDistanceSec = 3
-
     const video = document.querySelector('video')
     const button = document.querySelector('button')
     const data = document.getElementsByClassName('data')[0]
@@ -56,6 +90,7 @@
           const form = new FormData()
           form.append('file', obj.data, `part-${partIndex}.webm`)
           form.append('done', !isRecording)
+
           fetch(videoUploadUrl, {
             method: "POST",
             body: form // Blob
@@ -74,13 +109,14 @@
 
     const start = () => {
       if (!isRecording) {
-        button.innerHTML = 'Stop recording'
         record()
+        button.classList.add('stop')
       } else {
-        button.innerHTML = 'Start recording'
         video.pause()
-        video.srcObject = null
         media.stop()
+        video.srcObject.getTracks().forEach(track => track.stop())
+        video.srcObject = null
+        button.classList.remove('stop')
       }
       isRecording = !isRecording
     }

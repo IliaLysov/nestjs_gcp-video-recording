@@ -11,7 +11,7 @@ export class UserController {
   async create(@Body() user: UserDto, @Res() res: Response) {
     try {
       await this.userService.create(user);
-      res.redirect('/video');
+      res.redirect('/login');
     } catch (error) {
       console.log(error);
     }
