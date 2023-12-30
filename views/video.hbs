@@ -89,7 +89,6 @@
           data.innerHTML += 1
           const form = new FormData()
           form.append('file', obj.data, `part-${partIndex}.webm`)
-          form.append('done', !isRecording)
 
           fetch(videoUploadUrl, {
             method: "POST",

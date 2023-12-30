@@ -1,9 +1,9 @@
 import {
-  Body,
   Controller,
   Get,
   Post,
   Render,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -12,6 +12,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { VideoService } from './video.service';
 import { getMainUrl } from 'src/utils/url';
 import { JwtAuthGuard } from 'src/auth/jwtStrategy/jwt-auth.guard';
+import { Request } from 'express';
 
 @Controller('video')
 export class VideoController {
@@ -30,10 +31,10 @@ export class VideoController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', { dest: './uploads' }))
   uploadVideo(
+    @Req() req: Request,
     @UploadedFile() video: Express.Multer.File,
-    @Body('done') done: string,
   ): string {
-    const result = this.videoService.uploadVideo(video, done === 'true');
+    const result = this.videoService.uploadVideo(video, req.user);
     return result;
   }
 }

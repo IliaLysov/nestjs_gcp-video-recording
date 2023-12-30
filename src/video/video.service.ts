@@ -3,36 +3,30 @@ import * as fs from 'fs';
 
 @Injectable()
 export class VideoService {
-  private uploadedParts: Express.Multer.File[] = [];
-  private joinTimer: NodeJS.Timeout | null = null;
+  private uploadedPartsMap: Map<string, Express.Multer.File[]> = new Map();
+  private joinTimerMap: Map<string, NodeJS.Timeout> = new Map();
   private joinTimeout = 10000; // 10 seconds
 
-  uploadVideo(video: Express.Multer.File, done: boolean): string {
-    this.uploadedParts.push(video);
-
-    if (done) {
-      this.clearJoinTimer();
-      this.joinVideoParts();
-      return 'Video uploaded';
-    } else {
-      console.log('Video part saved to', video.path);
-      this.resetJoinTimer();
-    }
+  uploadVideo(video: Express.Multer.File, user: any): string {
+    const uploadedParts = this.getOrCreateUploadedParts(user.id);
+    uploadedParts.push(video);
+    this.resetJoinTimer(user.id);
 
     return 'Video part uploaded';
   }
 
-  private joinVideoParts() {
+  private joinVideoParts(uploadedParts: Express.Multer.File[], userId: string) {
     // Assuming parts are sorted by filename (part-1.webm, part-2.webm, etc.)
-    const sortedParts = this.uploadedParts.sort((a, b) => {
+    const sortedParts = uploadedParts.sort((a, b) => {
       const regex = /part-(\d+)\.webm/;
       const indexA = parseInt(regex.exec(a.originalname)[1]);
       const indexB = parseInt(regex.exec(b.originalname)[1]);
       return indexA - indexB;
     });
 
+    console.log(sortedParts);
     // Combine all parts into one file
-    const finalFilePath = './uploads/final.webm';
+    const finalFilePath = `./uploads/${userId}-final.webm`;
     sortedParts.forEach((part) => {
       fs.appendFileSync(finalFilePath, fs.readFileSync(part.path));
     });
@@ -42,25 +36,40 @@ export class VideoService {
       fs.unlinkSync(part.path);
     });
 
-    this.uploadedParts = [];
+    this.uploadedPartsMap.delete(userId);
 
     console.log('Video parts joined and saved to', finalFilePath);
   }
 
-  private resetJoinTimer() {
-    if (this.joinTimer) {
-      clearTimeout(this.joinTimer);
+  private resetJoinTimer(userId: string) {
+    if (this.joinTimerMap.has(userId)) {
+      clearTimeout(this.joinTimerMap.get(userId)!);
     }
 
-    this.joinTimer = setTimeout(() => {
-      this.joinVideoParts();
+    const joinTimer = setTimeout(() => {
+      const uploadedParts = this.uploadedPartsMap.get(userId);
+      if (uploadedParts) {
+        this.joinVideoParts(uploadedParts, userId);
+      }
     }, this.joinTimeout);
+
+    this.joinTimerMap.set(userId, joinTimer);
   }
 
-  private clearJoinTimer() {
-    if (this.joinTimer) {
-      clearTimeout(this.joinTimer);
-      this.joinTimer = null;
+  // private clearJoinTimer(userId: string) {
+  //   if (this.joinTimerMap.has(userId)) {
+  //     clearTimeout(this.joinTimerMap.get(userId)!);
+  //     this.joinTimerMap.delete(userId);
+  //   }
+  // }
+
+  private getOrCreateUploadedParts(userId: string): Express.Multer.File[] {
+    if (!this.uploadedPartsMap.has(userId)) {
+      this.uploadedPartsMap.set(userId, []);
     }
+
+    return this.uploadedPartsMap.get(userId)!;
   }
+
+  // private uploadToObjectStorage() {}
 }
