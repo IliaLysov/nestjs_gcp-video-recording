@@ -5,7 +5,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
-import { JwtModule } from '@nestjs/jwt';
 
 @Global()
 @Module({
@@ -23,21 +22,12 @@ import { JwtModule } from '@nestjs/jwt';
         synchronize: true,
       }),
     }),
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        isGlobal: true,
-      }),
-    }),
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
+    ConfigModule.forRoot(),
     UserModule,
     VideoModule,
     AuthModule,
   ],
-  exports: [UserModule, ConfigModule, JwtModule],
+  exports: [UserModule, ConfigModule],
   controllers: [AppController],
 })
 export class AppModule {}

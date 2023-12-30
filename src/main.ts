@@ -18,7 +18,7 @@ async function bootstrap() {
 
   const cert = await createCert({
     ca: { key: ca.key, cert: ca.cert },
-    domains: [primaryAddress, '127.0.0.1', 'localhost'],
+    domains: [primaryAddress(), '127.0.0.1', 'localhost'],
     validity: 365,
   });
 

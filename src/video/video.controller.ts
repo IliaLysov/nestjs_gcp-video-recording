@@ -10,14 +10,14 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { VideoService } from './video.service';
-import { AuthGuard } from 'src/auth/auth.guart';
 import { getMainUrl } from 'src/utils/url';
+import { JwtAuthGuard } from 'src/auth/jwtStrategy/jwt-auth.guard';
 
 @Controller('video')
-@UseGuards(AuthGuard)
 export class VideoController {
   constructor(private readonly videoService: VideoService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   @Render('video')
   video() {
@@ -26,6 +26,7 @@ export class VideoController {
     };
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', { dest: './uploads' }))
   uploadVideo(

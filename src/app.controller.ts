@@ -7,7 +7,7 @@ export class AppController {
   @Render('signin')
   signIn() {
     return {
-      signInUrl: `${getMainUrl()}/auth/signin`,
+      signInUrl: `${getMainUrl()}/auth/login`,
     };
   }
 
