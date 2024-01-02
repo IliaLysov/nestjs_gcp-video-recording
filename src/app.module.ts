@@ -1,10 +1,12 @@
 import { Global, Module } from '@nestjs/common';
-import { VideoModule } from './video/video.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
+import { GcsModule } from './gcs/gcs.module';
+import { VideoGateway } from './video/video.gateway';
+import { JwtModule } from '@nestjs/jwt';
 
 @Global()
 @Module({
@@ -23,11 +25,20 @@ import { AuthModule } from './auth/auth.module';
       }),
     }),
     ConfigModule.forRoot(),
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        return {
+          secret: configService.get('JWT_SECRET'),
+        };
+      },
+    }),
     UserModule,
-    VideoModule,
     AuthModule,
+    GcsModule,
   ],
-  exports: [UserModule, ConfigModule],
+  exports: [UserModule, ConfigModule, GcsModule, JwtModule],
   controllers: [AppController],
+  providers: [VideoGateway],
 })
 export class AppModule {}

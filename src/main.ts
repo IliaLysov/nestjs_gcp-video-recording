@@ -42,7 +42,7 @@ async function bootstrap() {
   );
 
   await app.listen(3000, async () => {
-    console.log(`Server started on ${getMainUrl()}`);
+    console.log(`Server started on ${getMainUrl()}/video`);
   });
 }
 bootstrap();

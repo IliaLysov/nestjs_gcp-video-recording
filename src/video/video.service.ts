@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
+import { GcsService } from 'src/gcs/gcs.service';
 
 @Injectable()
 export class VideoService {
   private uploadedPartsMap: Map<string, Express.Multer.File[]> = new Map();
   private joinTimerMap: Map<string, NodeJS.Timeout> = new Map();
   private joinTimeout = 10000; // 10 seconds
+
+  constructor(private gcsService: GcsService) {}
 
   uploadVideo(video: Express.Multer.File, user: any): string {
     const uploadedParts = this.getOrCreateUploadedParts(user.id);
@@ -24,7 +27,6 @@ export class VideoService {
       return indexA - indexB;
     });
 
-    console.log(sortedParts);
     // Combine all parts into one file
     const finalFilePath = `./uploads/${userId}-final.webm`;
     sortedParts.forEach((part) => {
@@ -37,6 +39,8 @@ export class VideoService {
     });
 
     this.uploadedPartsMap.delete(userId);
+
+    // this.gcsService.uploadFile(finalFilePath);
 
     console.log('Video parts joined and saved to', finalFilePath);
   }
@@ -55,13 +59,6 @@ export class VideoService {
 
     this.joinTimerMap.set(userId, joinTimer);
   }
-
-  // private clearJoinTimer(userId: string) {
-  //   if (this.joinTimerMap.has(userId)) {
-  //     clearTimeout(this.joinTimerMap.get(userId)!);
-  //     this.joinTimerMap.delete(userId);
-  //   }
-  // }
 
   private getOrCreateUploadedParts(userId: string): Express.Multer.File[] {
     if (!this.uploadedPartsMap.has(userId)) {

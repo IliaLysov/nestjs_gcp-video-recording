@@ -12,3 +12,7 @@ export const primaryAddress = () => {
 export const getMainUrl = () => {
   return `https://${primaryAddress()}:${process.env.PORT}`;
 };
+
+export const getMainWsUrl = () => {
+  return `wss://${primaryAddress()}:${process.env.PORT}`;
+};
