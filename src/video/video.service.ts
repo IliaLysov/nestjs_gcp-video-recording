@@ -1,14 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
-import { GcsService } from 'src/gcs/gcs.service';
 
 @Injectable()
 export class VideoService {
   private uploadedPartsMap: Map<string, Express.Multer.File[]> = new Map();
   private joinTimerMap: Map<string, NodeJS.Timeout> = new Map();
   private joinTimeout = 10000; // 10 seconds
-
-  constructor(private gcsService: GcsService) {}
 
   uploadVideo(video: Express.Multer.File, user: any): string {
     const uploadedParts = this.getOrCreateUploadedParts(user.id);

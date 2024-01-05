@@ -4,7 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
-import { GcsModule } from './gcs/gcs.module';
 import { VideoGateway } from './video/video.gateway';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -35,9 +34,8 @@ import { JwtModule } from '@nestjs/jwt';
     }),
     UserModule,
     AuthModule,
-    GcsModule,
   ],
-  exports: [UserModule, ConfigModule, GcsModule, JwtModule],
+  exports: [UserModule, ConfigModule, JwtModule],
   controllers: [AppController],
   providers: [VideoGateway],
 })

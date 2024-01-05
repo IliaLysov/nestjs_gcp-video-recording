@@ -79,15 +79,13 @@
     const partsLengthDiv = document.getElementById('parts-length');
     let counter = 0;
     let parts = new Map();
+    let recievedParts = new Set();
 
     let isRecording = false
     let mediaRecorder
     let socket
 
-    let handledOnDataAvailable = []
-    let handledUploadParts = []
-    let handledUploadPartsPromise = []
-    let handledUploadPartsPromiseRejected = []
+    let isProcessing = false;
 
     function updatePartsLength() {
       partsLengthDiv.textContent = `Parts Length: ${parts.size}`;
@@ -119,62 +117,42 @@
     async function handleDataAvailable(event) {
       console.log('ondataavailable', event);
       event.data.arrayBuffer().then((buffer) => {
+        updatePartsLength();
         parts.set(counter, buffer);
-        handledOnDataAvailable.push(counter) // <--- ON DATA AVAILABLE
         counter++;
-        uploadParts();
+        if (!isProcessing) {
+          uploadParts();
+        }
       });
     }
-
-    {{!-- async function uploadPart(resume) {
-      if (socket && socket.connected || resume) {
-        while (parts.size > 0) {
-          const [count, part] = [...parts.entries()][0];
-          handledUploadParts.push(count); // <--- UPLOAD PARTS
-          try {
-            await new Promise((resolve, reject) => {
-              socket.emit('videoPart', {count, part}, (response) => {
-                if (response) {
-                  parts.delete(count);
-                  handledUploadPartsPromise.push(count); // <--- UPLOAD PARTS PROMISE
-                  updatePartsLength();
-                  resolve();
-                } else {
-                  handledUploadPartsPromiseRejected.push(count); // <--- UPLOAD PARTS PROMISE REJECTED
-                  // Ability to divide part by 2 and retry (to avoid network issues (network bottleneck))
-                  reject(new Error('Error sending part'));
-                }
-              });
-            });
-          } catch (error) {
-            console.error('Error sending part:', error);
-            break; // Retry on next loop or after reconnection
-          }
-        }
-      }
-      updatePartsLength();
-      disconnectSocket();
-    } --}}
 
     async function uploadParts(resume) {
       updatePartsLength();
       return new Promise((resolve, reject) => {
-        if (socket && socket.connected || resume) {
-          if (parts.size > 0) {
-            const [count, part] = [...parts.entries()][0];
-            socket.emit('videoPart', {count, part}, (response) => {
-              if (response) {
-                parts.delete(count);
-                uploadParts()
-                  .then(() => resolve())
-              } else {
-                reject(new Error('Error sending part'));
-              }
-            });
-          } else {
-            disconnectSocket();
-            resolve();
+        isProcessing = true;
+        if (parts.size > 0) {
+          if (socket && socket.connected || resume) {
+            {{!-- const [count, part] = [...parts.entries()][0]; --}}
+            const count = [...parts.keys()].toSorted((a, b) => a - b)[0];
+            const part = parts.get(count);
+            if (!recievedParts.has(count)) {
+              resume && recievedParts.add(count);
+              socket.emit('videoPart', {count, part}, (response) => {
+                if (response) {
+                  recievedParts.add(count);
+                  parts.delete(count);
+                  uploadParts()
+                    .then(() => resolve())
+                } else {
+                  reject(new Error('Error sending part'));
+                }
+              });
+            }
           }
+        } else {
+          isProcessing = false;
+          disconnectSocket();
+          resolve();
         }
       })
     }
@@ -190,24 +168,10 @@
       if (!socket || !socket.connected) {
         socket = io(videoUploadUrl);
         socket.on('connect', () => {
-          {{!-- alert(`
-            CONNECTED
-            handledOnDataAvailable = ${handledOnDataAvailable}
-            handledUploadParts = ${handledUploadParts}
-            handledUploadPartsPromise = ${handledUploadPartsPromise}
-            handledUploadPartsPromiseRejected = ${handledUploadPartsPromiseRejected}
-          `) --}}
           console.log('connected');
         });
 
         socket.on('disconnect', () => {
-          {{!-- alert(`
-            DISCONNECTED
-            handledOnDataAvailable = ${handledOnDataAvailable}
-            handledUploadParts = ${handledUploadParts}
-            handledUploadPartsPromise = ${handledUploadPartsPromise}
-            handledUploadPartsPromiseRejected = ${handledUploadPartsPromiseRejected}
-          `) --}}
           console.log('disconnected');
         });
 
@@ -218,13 +182,6 @@
 
         socket.io.on('reconnect', () => {
           console.log('reconnected');
-          {{!-- alert(`
-            RECONNECTED
-            handledOnDataAvailable = ${handledOnDataAvailable}
-            handledUploadParts = ${handledUploadParts}
-            handledUploadPartsPromise = ${handledUploadPartsPromise}
-            handledUploadPartsPromiseRejected = ${handledUploadPartsPromiseRejected}
-          `) --}}
           uploadParts(true);
         });
       }
@@ -233,6 +190,8 @@
     button.addEventListener('click', () => {
       if (!isRecording) {
         counter = 0;
+        isProcessing = false;
+        recievedParts = new Set();
         parts.clear();
         console.log('started');
         connectToSocket();
