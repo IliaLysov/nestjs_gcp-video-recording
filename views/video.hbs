@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Video Recorder</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="wrapper">
+    <div class="video-container">
+      <div class="video-info">
+        <span class="video-info-time">00:00</span>
+        <span class="video-info-size">0.00 Mb</span>
+      </div>
+      <video muted></video>
+    </div>
+    <div class="controls">
+      <div class="controls-info local">
+        <h3 class="controls-info-title">Local</h3>
+        <span class="controls-info-local-time">00:00</span>
+        <span class="controls-info-local-size">0.00 Mb</span>
+      </div>
+      <div class="button-wrapper">
+        <button title="start/stop" type="button"></button>
+      </div>
+      <div class="controls-info cloud">
+        <h3 class="controls-info-title">Cloud</h3>
+        <span class="controls-info-cloud-time">00:00</span>
+        <span class="controls-info-cloud-size">0.00 Mb</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const videoUploadUrl = "{{ videoUploadUrl }}"
+    const timeDistanceSec = 0.5
+    const videoElement = document.querySelector('video')
+    const button = document.querySelector('button')
+
+    const localInfoDiv = document.querySelector('.local');
+    const cloudInfoDiv = document.querySelector('.cloud');
+
+    const totalVideoTimeSpan = document.querySelector('.video-info-time');
+    const totalVideoSizeSpan = document.querySelector('.video-info-size');
+    const localVideoTimeSpan = document.querySelector('.controls-info-local-time');
+    const localVideoSizeSpan = document.querySelector('.controls-info-local-size');
+    const uploadedVideoTimeSpan = document.querySelector('.controls-info-cloud-time');
+    const uploadedVideoSizeSpan = document.querySelector('.controls-info-cloud-size');
+
+    let counter = 0;
+    let parts = new Map();
+    let recievedParts = new Set();
+    let isRecording = false
+    let mediaRecorder
+    let socket
+    let isExecuting = false;
+
+
+    let totalRecordedVideoSize = 0;
+    let totalRecordedVideoTime = 0;
+    let uploadedVideoSize = 0;
+    let uploadedVideoTime = 0;
+    let localVideoSize = 0;
+    let localVideoTime = 0;
+
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.floor(seconds % 60);
+      return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+    }
+
+    function formatSize(bytes) {
+      const megaBytes = bytes / (1024 * 1024);
+      return `${megaBytes.toFixed(2)} Mb`;
+    }
+
+    function updateElements() {
+      localVideoTime = totalRecordedVideoTime - uploadedVideoTime;
+      localVideoSize = totalRecordedVideoSize - uploadedVideoSize;
+
+      totalVideoTimeSpan.textContent = formatTime(totalRecordedVideoTime);
+      totalVideoSizeSpan.textContent = formatSize(totalRecordedVideoSize);
+      localVideoTimeSpan.textContent = formatTime(localVideoTime);
+      localVideoSizeSpan.textContent = formatSize(localVideoSize);
+      uploadedVideoTimeSpan.textContent = formatTime(uploadedVideoTime);
+      uploadedVideoSizeSpan.textContent = formatSize(uploadedVideoSize);
+    }
+
+    async function setupMediaRecorder() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'environment'
+          },
+          audio: true
+        });
+        videoElement.srcObject = stream;
+        videoElement.play();
+
+        mediaRecorder = new MediaRecorder(stream, {
+          //there you can set the video quality based on network quality
+          videoBitsPerSecond: 400000,
+          audioBitsPerSecond: 32000,
+          videoFrameRate: 25,
+        });
+        mediaRecorder.ondataavailable = handleDataAvailable;
+      } catch (error) {
+        alert('Error accessing media devices.');
+      }
+    }
+
+    let lastTime = 0;
+
+    function handleDataAvailable(event) {
+      const size = event.data.size;
+      const time = event.timecode;
+      const timeDistanceSec = (Date.now() - lastTime) / 1000;
+      lastTime = Date.now();
+
+      totalRecordedVideoSize += size;
+      totalRecordedVideoTime += timeDistanceSec;
+
+      parts.set(counter, {data: event.data, time: timeDistanceSec});
+      counter++;
+      if (!isExecuting) {
+        uploadParts();
+      } else {
+        updateElements()
+      }
+    }
+
+    function uploadParts() {
+      isExecuting = true;
+      updateElements();
+      if (parts.size > 0) {
+        if (socket && socket.connected) {
+          const count = [...parts.keys()].sort((a, b) => a - b)[0];
+          const {data, time} = parts.get(count);
+          socket.emit('videoPart', {count, data}, (response) => {
+            if (response) {
+              uploadedVideoSize += data.size;
+              uploadedVideoTime += time;
+              parts.delete(count);
+              uploadParts();
+            }
+          });
+        }
+      } else {
+        isExecuting = false;
+        disconnectSocket();
+      }
+    }
+
+    function disconnectSocket() {
+      if (socket && socket.connected && !isRecording && parts.size === 0) {
+        socket.emit('endVideo');
+        socket.disconnect();
+      }
+    }
+
+    function connectToSocket() {
+      if (!socket || !socket.connected) {
+        socket = io(videoUploadUrl);
+        socket.on('connect', () => {
+          localInfoDiv.classList.remove('active');
+          cloudInfoDiv.classList.add('active');
+          if (parts.size > 0) {
+            uploadParts();
+          }
+        });
+        socket.on('disconnect', () => {
+          cloudInfoDiv.classList.remove('active');
+          if (isRecording) {
+            localInfoDiv.classList.add('active');
+          }
+        });
+      }
+    }
+
+    button.addEventListener('click', () => {
+      if (!isRecording) {
+        startRecording();
+      } else {
+        stopRecording();
+      }
+      isRecording = !isRecording;
+    });
+
+    function startRecording() {
+      totalRecordedVideoSize = 0;
+      totalRecordedVideoTime = 0;
+      uploadedVideoSize = 0;
+      uploadedVideoTime = 0;
+      localVideoSize = 0;
+      localVideoTime = 0;
+      updateElements();
+      counter = 0;
+      isExecuting = false;
+      parts.clear();
+      connectToSocket();
+      mediaRecorder.start(timeDistanceSec * 1000);
+      lastTime = Date.now();
+      button.classList.add('stop');
+    }
+
+    function stopRecording() {
+      mediaRecorder.stop();
+      button.classList.remove('stop');
+      localInfoDiv.classList.remove('active');
+      cloudInfoDiv.classList.remove('active');
+    }
+
+    setupMediaRecorder();
+  </script>
+
+</body>
+</html>

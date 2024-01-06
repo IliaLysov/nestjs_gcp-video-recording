@@ -6,37 +6,39 @@ import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { VideoGateway } from './video/video.gateway';
 import { JwtModule } from '@nestjs/jwt';
+import { GcsModule } from './gcs/gcs.module';
 
 @Global()
 @Module({
-  imports: [
-    TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DATABASE_HOST'),
-        port: configService.get('DATABASE_PORT'),
-        username: configService.get('DATABASE_USER'),
-        password: configService.get('DATABASE_PASSWORD'),
-        database: configService.get('DATABASE_NAME'),
-        autoLoadEntities: true,
-        synchronize: true,
-      }),
-    }),
-    ConfigModule.forRoot(),
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        return {
-          secret: configService.get('JWT_SECRET'),
-        };
-      },
-    }),
-    UserModule,
-    AuthModule,
-  ],
-  exports: [UserModule, ConfigModule, JwtModule],
-  controllers: [AppController],
-  providers: [VideoGateway],
+    imports: [
+        TypeOrmModule.forRootAsync({
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+                type: 'postgres',
+                host: configService.get('DATABASE_HOST'),
+                port: configService.get('DATABASE_PORT'),
+                username: configService.get('DATABASE_USER'),
+                password: configService.get('DATABASE_PASSWORD'),
+                database: configService.get('DATABASE_NAME'),
+                autoLoadEntities: true,
+                synchronize: true,
+            }),
+        }),
+        ConfigModule.forRoot(),
+        JwtModule.registerAsync({
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => {
+                return {
+                    secret: configService.get('JWT_SECRET'),
+                };
+            },
+        }),
+        UserModule,
+        AuthModule,
+        GcsModule,
+    ],
+    exports: [UserModule, ConfigModule, JwtModule, GcsModule],
+    controllers: [AppController],
+    providers: [VideoGateway],
 })
 export class AppModule {}
