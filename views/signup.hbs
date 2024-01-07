@@ -3,19 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>SignUp</title>
+    <link rel="stylesheet" href="sign.css">
 </head>
 <body>
-    <h1>Sign up</h1>
+   <div class="top">
+        <img src="logo.svg" alt="logo" class="logo">
+        <h1 class="title">Sign Up</h1>
+    </div>
     <form 
-        action="{{ signUpUrl }}" 
         method="POST"
+        class="form"
     >
-        <label for="email">Email</label>
-        <input type="text" name="email" placeholder="example@domain.com"/>
-        <label for="password">Password</label>
-        <input type="password" name="password" placeholder="password"/>
-        <button>Registration</button>
+        <div class="input-wrapper">
+            <label for="email">Email</label>
+            <input type="text" id="email" name="email" placeholder="example@domain.com"/>
+        </div>
+        <div class="confirm-wrapper">
+            <div class="input-wrapper">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="password"/>
+            </div>
+            <div class="input-wrapper">
+                <label for="code">Auth code</label>
+                <input type="text" name="code" placeholder="000000"/>
+            </div>
+        </div>
+        <button title="submit" type="submit">Send auth code</button>
     </form>
+    <div class="bottom">
+        <p>Already registered? <a href="signin">Sign in</a></p>
+    </div>
+    <script>
+        const form = document.querySelector('.form');
+        const emailInput = document.querySelector('input[name="email"]');
+        const passwordInput = document.querySelector('input[name="password"]');
+        const codeInput = document.querySelector('input[name="code"]');
+        const button = document.querySelector('button');
+        const confirmWrapper = document.querySelector('.confirm-wrapper');
+
+        let readyToRegister = false
+
+        async function sendAuthCode(email) {
+            try {
+                const response = await fetch('{{ sendAuthCodeUrl }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({email}),
+                })
+
+                return response.status;
+            } catch (error) {
+                alert(error.message)
+            }
+        }
+
+        async function register(data) {
+            try {
+                const response = await fetch('{{ registerUrl }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data),
+                })
+
+                return response.status;
+            } catch (error) {
+                alert(error.message)
+            }
+        }
+
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            const code = codeInput.value;
+            const data = { email, password, code };
+
+
+            if (readyToRegister) {
+                console.log('ready to register')
+                const regex = /^(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z0-9!@#$%^&*(),.?":{}|<>]{1,}$/
+                if (!regex.test(password)) {
+                    alert('Password must contain at least one special character.')
+                    return;
+                }
+                const status = await register(data);
+                if (status === 201) {
+                    alert('You have successfully registered. Please sign in.')
+                    window.location.href = '/signin';
+                } else if (status === 500) {
+                    alert('Something went wrong. Please try again later.')
+                } else if (status === 400) {
+                    alert('Invalid auth code or account already exists.')
+                }
+            } else {
+                console.log('not ready to register')
+                const status = await sendAuthCode(email);
+                if (status === 201) {
+                    confirmWrapper.style.display = 'block';
+                    button.textContent = 'Register';
+                    emailInput.disabled = true;
+                    readyToRegister = true;
+                } else if (status === 500) {
+                    alert('Something went wrong. Please try again later.')
+                } else if (status === 400) {
+                    alert('Email is already registered.')
+                }
+            }
+        })
+    </script>
 </body>
 </html>

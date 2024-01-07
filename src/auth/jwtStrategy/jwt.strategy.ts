@@ -3,12 +3,18 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Socket } from 'socket.io';
-import { User } from 'src/user/user.entity';
+import { User } from 'src/entities/user.entity';
+import { UserService } from 'src/user/user.service';
 import { getAccessTokenFromCookie } from 'src/utils/token';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-    constructor(private configService: ConfigService) {
+    private accessToken: string;
+
+    constructor(
+        private configService: ConfigService,
+        private userService: UserService,
+    ) {
         super({
             jwtFromRequest: (req) => this.extractToken(req),
             ignoreExpiration: false,
@@ -17,19 +23,26 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     async validate(payload: any): Promise<User> {
-        return { id: payload.sub, email: payload.email } as User;
+        const tokenUser = { id: payload.sub, email: payload.email } as User;
+        const user = await this.userService.findOne(tokenUser.email);
+        if (!user) return null;
+        if (this.accessToken !== user.accessToken) return null;
+        return tokenUser;
     }
 
     private extractToken(req: any): string | null {
         if (req instanceof Socket) {
             const cookie = req.handshake.headers.cookie;
             const accessToken = getAccessTokenFromCookie(cookie);
+            this.accessToken = accessToken;
             return accessToken;
         }
 
         return ExtractJwt.fromExtractors([
             (req) => {
-                return req.cookies['accessToken'];
+                const accessToken = req.cookies['accessToken'];
+                this.accessToken = accessToken;
+                return accessToken;
             },
         ])(req);
     }

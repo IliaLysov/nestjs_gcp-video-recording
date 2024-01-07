@@ -13,7 +13,7 @@ import { GcsService } from 'src/gcs/gcs.service';
 import { getAccessTokenFromCookie } from 'src/utils/token';
 
 @WebSocketGateway()
-export class VideoGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     private server: Server;
 

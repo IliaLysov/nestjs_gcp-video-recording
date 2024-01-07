@@ -9,6 +9,12 @@ body {
   background: white;
 }
 
+button {
+  all: unset;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .wrapper {
   display: flex;
   flex-direction: column;
@@ -40,16 +46,75 @@ video {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-.video-info {
+.info-wrapper {
   position: absolute;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20px 20px;
+}
+
+.info-wrapper.top {
+  align-items: start;
+  top: 0px;
+}
+
+.info-wrapper.bottom {
+  align-items: end;
+  bottom: 0px;
+}
+
+.video-info {
+  position: relative;
   background-color: rgba(0, 0, 0, 0.2);
-  margin-top: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 10px 20px;
   border-radius: 10px;
   color: white;
+  height: fit-content;
+}
+
+.info-wrapper img {
+  height: 30px;
+  width: 30px;
+  cursor: pointer;
+  z-index: 100;
+}
+
+.connection.online {
+  padding-right: 20px;
+}
+
+.connection.offline {
+  padding-right: 20px;
+}
+
+.connection.online::after {
+  background-color: rgb(76, 175, 80);
+  right: 20px;
+  transform: translate(0, -50%);
+}
+
+.connection.offline::after {
+  background-color: rgb(237, 48, 48);
+  right: 20px;
+  transform: translate(0, -50%);
+}
+
+.connection::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  /* right: 20px; */
+  transform: translate(-50%, -50%);
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  background-color: rgb(112, 112, 112);
+  
 }
 
 .controls {
@@ -58,7 +123,7 @@ video {
   align-items: center;
   width: 100%;
   box-sizing: border-box;
-  padding: 20px 0px;
+  padding: 10px 0px;
 }
 
 .controls-info {
@@ -71,7 +136,7 @@ video {
 }
 
 .local {
-  background-color: rgba(237, 48, 48, 0.20);
+  border: solid 1px red;
 }
 
 .local.active {
@@ -80,11 +145,11 @@ video {
 }
 
 .cloud {
-  background-color: rgba(48, 135, 237, 0.20);
+  border: 1px solid rgb(76, 175, 80);
 }
 
 .cloud.active {
-  background-color: rgb(48, 135, 237);
+  background-color: rgb(76, 175, 80);
   color: white;
 }
 
@@ -100,8 +165,7 @@ video {
   width: 80px;
 }
 
-button {
-  all: unset;
+.start-stop {
   position: relative;
   height: 60px;
   width: 60px;
@@ -109,7 +173,7 @@ button {
   border-radius: 50%;
 }
 
-button::after {
+.start-stop::after {
   content: '';
   position: absolute;
   top: 50%;
@@ -130,4 +194,13 @@ button::after {
 
 .stop::after {
   border: red 4px solid !important;
+}
+
+.signout {
+  background-color: rgba(237, 48, 48, 0.80);
+  color: white;
+  font-size: 14px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  z-index: 100;
 }

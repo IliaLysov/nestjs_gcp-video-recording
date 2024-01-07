@@ -10,11 +10,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         context: ExecutionContext,
         status?: any,
     ): TUser {
+        const res = context.switchToHttp().getResponse();
         if (err || !user) {
-            const res = context.switchToHttp().getResponse();
             res.redirect('/signin');
             return super.handleRequest(err, user, info, context, status);
         }
+
         return user;
     }
 }

@@ -3,19 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>SignIn</title>
+    <link rel="stylesheet" href="sign.css">
 </head>
 <body>
-    <h1>Sign in</h1>
+    <div class="top">
+        <img src="logo.svg" alt="logo" class="logo">
+        <h1 class="title">Sign in</h1>
+    </div>
     <form 
         action="{{ signInUrl }}" 
         method="POST"
+        class="form"
     >
-        <label for="email">Email</label>
-        <input type="text" name="email" placeholder="example@domain.com"/>
-        <label for="password">Password</label>
-        <input type="password" name="password" placeholder="password"/>
-        <button>Send</button>
+        <div class="input-wrapper">
+            <label for="email">Email</label>
+            <input type="text" id="email" name="email" placeholder="example@domain.com" autocomplete="email"/>
+        </div>
+        <div class="input-wrapper">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="password"/>
+        </div>
+        <button title="submit" type="submit">Send</button>
     </form>
+    <div class="bottom">
+        <p>Don't have an account? <a href="signup">Sign up</a></p>
+    </div>
 </body>
 </html>

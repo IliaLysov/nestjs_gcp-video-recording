@@ -1,4 +1,4 @@
-import { Controller, Get, Render, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Render, UseGuards } from '@nestjs/common';
 import { getMainUrl, getMainWsUrl } from './utils/url';
 import { JwtAuthGuard } from './auth/jwtStrategy/jwt-auth.guard';
 
@@ -16,7 +16,8 @@ export class AppController {
     @Render('signup')
     signUp() {
         return {
-            signUpUrl: `${getMainUrl()}/user/create`,
+            sendAuthCodeUrl: `${getMainUrl()}/auth/send-code`,
+            registerUrl: `${getMainUrl()}/auth/register`,
         };
     }
 
@@ -25,7 +26,16 @@ export class AppController {
     @Render('video')
     video() {
         return {
+            signOutUrl: `${getMainUrl()}/auth/logout`,
             videoUploadUrl: `${getMainWsUrl()}`,
+        };
+    }
+
+    @Get('download/:videoToken')
+    @Render('download')
+    download(@Param('videoToken') videoToken: string) {
+        return {
+            downloadUrl: `${getMainUrl()}/video/download/${videoToken}`,
         };
     }
 }

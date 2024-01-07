@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { User } from './user.entity';
+import { User } from '../entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserDto } from './dto/user.dto';
@@ -22,5 +22,9 @@ export class UserService {
 
     findOne(email: string): Promise<User | null> {
         return this.userRepository.findOneBy({ email });
+    }
+
+    async updateAccessToken(email: string, accessToken: string): Promise<void> {
+        await this.userRepository.update({ email }, { accessToken });
     }
 }

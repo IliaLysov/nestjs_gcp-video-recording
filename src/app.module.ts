@@ -4,9 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
-import { VideoGateway } from './video/video.gateway';
+import { AppGateway } from './app.gateway';
 import { JwtModule } from '@nestjs/jwt';
 import { GcsModule } from './gcs/gcs.module';
+import { EmailModule } from './email/email.module';
+import { VideoModule } from './video/video.module';
 
 @Global()
 @Module({
@@ -36,9 +38,18 @@ import { GcsModule } from './gcs/gcs.module';
         UserModule,
         AuthModule,
         GcsModule,
+        EmailModule,
+        VideoModule,
     ],
-    exports: [UserModule, ConfigModule, JwtModule, GcsModule],
+    exports: [
+        UserModule,
+        ConfigModule,
+        JwtModule,
+        GcsModule,
+        EmailModule,
+        VideoModule,
+    ],
     controllers: [AppController],
-    providers: [VideoGateway],
+    providers: [AppGateway],
 })
 export class AppModule {}
