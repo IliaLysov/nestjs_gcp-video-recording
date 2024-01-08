@@ -6,7 +6,7 @@ import * as nodemailer from 'nodemailer';
 export class EmailService {
     private transporter: nodemailer.Transporter;
 
-    private delay = 1000 * 60 * 1; // 1 minutes
+    private delay = 1000 * 60 * 0.1; // 0.1 minutes
     private pendingEmailTimers: Map<string, NodeJS.Timeout> = new Map();
 
     constructor(private configService: ConfigService) {

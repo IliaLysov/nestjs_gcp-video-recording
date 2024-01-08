@@ -1,6 +1,7 @@
 import { Bucket, DownloadResponse, Storage } from '@google-cloud/storage';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { UserInfo } from 'src/utils/types';
 import { VideoService } from 'src/video/video.service';
 import { Writable } from 'stream';
 
@@ -15,7 +16,7 @@ export class GcsService {
     private readonly storage: Storage;
     private readonly bucket: Bucket;
 
-    private cloudFilesDeletionTimers: Map<string, NodeJS.Timeout> = new Map();
+    // private cloudFilesDeletionTimers: Map<string, NodeJS.Timeout> = new Map();
     private pendingFinishStreamTimers: Map<string, NodeJS.Timeout> = new Map();
 
     private streamsInfoMap: Map<string, StreamInfo> = new Map();
@@ -55,53 +56,57 @@ export class GcsService {
         return this.streamsInfoMap.get(userId)!;
     }
 
-    private resetTimer(userId: string): void {
-        if (this.pendingFinishStreamTimers.has(userId)) {
-            clearTimeout(this.pendingFinishStreamTimers.get(userId)!);
+    private resetTimer(user: UserInfo): void {
+        if (this.pendingFinishStreamTimers.has(user.id)) {
+            clearTimeout(this.pendingFinishStreamTimers.get(user.id)!);
         }
 
         const timer = setTimeout(() => {
-            this.endVideoStream(userId);
+            this.endVideoStream(user);
         }, this.timeout);
 
-        this.pendingFinishStreamTimers.set(userId, timer);
+        this.pendingFinishStreamTimers.set(user.id, timer);
     }
 
-    uploadVideoChunk(chunk: Buffer, userId: string): void {
-        const streamInfo = this.getOrCreateStreamInfo(userId);
+    uploadVideoChunk(chunk: Buffer, user: UserInfo): void {
+        const streamInfo = this.getOrCreateStreamInfo(user.id);
         streamInfo.stream.write(chunk);
         streamInfo.size += chunk.byteLength;
 
-        this.resetTimer(userId);
+        this.resetTimer(user);
     }
 
-    endVideoStream(userId: string): void {
-        const streamInfo = this.streamsInfoMap.get(userId);
+    endVideoStream(user: UserInfo): void {
+        const streamInfo = this.streamsInfoMap.get(user.id);
         streamInfo.stream.end();
-        this.streamsInfoMap.delete(userId);
+        this.streamsInfoMap.delete(user.id);
 
-        clearTimeout(this.pendingFinishStreamTimers.get(userId));
-        this.pendingFinishStreamTimers.delete(userId);
-        console.log(`Stream ends for ${userId}`);
+        clearTimeout(this.pendingFinishStreamTimers.get(user.id));
+        this.pendingFinishStreamTimers.delete(user.id);
+        console.log(`Stream ends for ${user.id}`);
 
-        this.videoService.create(userId, streamInfo.fileName, streamInfo.size);
+        this.videoService.saveVideoInfoToDB(
+            user.id,
+            streamInfo.fileName,
+            streamInfo.size,
+        );
 
-        this.deleteFileWithDelay(streamInfo.fileName);
+        this.videoService.sendDeepLinkToEmail(user.email, streamInfo.fileName);
     }
 
-    private deleteFile(fileName: string): void {
-        this.bucket.file(fileName).delete();
-        this.videoService.delete(fileName);
-    }
+    // private deleteFile(fileName: string): void {
+    //     this.bucket.file(fileName).delete();
+    //     this.videoService.delete(fileName);
+    // }
 
-    private deleteFileWithDelay(fileName: string): void {
-        const timer = setTimeout(() => {
-            this.deleteFile(fileName);
-            this.cloudFilesDeletionTimers.delete(fileName);
-        }, this.timeToKeepFiles);
+    // private deleteFileWithDelay(fileName: string): void {
+    //     const timer = setTimeout(() => {
+    //         this.deleteFile(fileName);
+    //         this.cloudFilesDeletionTimers.delete(fileName);
+    //     }, this.timeToKeepFiles);
 
-        this.cloudFilesDeletionTimers.set(fileName, timer);
-    }
+    //     this.cloudFilesDeletionTimers.set(fileName, timer);
+    // }
 
     getVideoFromGcs(fileName: string): Promise<DownloadResponse> {
         return this.bucket.file(fileName).download();

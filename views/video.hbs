@@ -23,7 +23,7 @@
         <img src="settingsIcon.svg" alt="settings">
         <button title="signout" type="button" class="signout">Sign out</button>
       </div>
-      <video muted></video>
+      <video muted autoplay id="video"></video>
     </div>
     <div class="controls">
       <div class="controls-info local">
@@ -127,6 +127,10 @@
           videoFrameRate: 25,
         });
         mediaRecorder.ondataavailable = handleDataAvailable;
+
+        {{!-- navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}, audio: true}).then((stream) => {
+          videoElement.src = window.URL.createObjectURL(stream);
+        }) --}}
       } catch (error) {
         alert('Error accessing media devices.');
       }

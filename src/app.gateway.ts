@@ -52,13 +52,13 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
             console.error('part too big');
             return false;
         }
-        this.gcsService.uploadVideoChunk(data, client['user'].id);
+        this.gcsService.uploadVideoChunk(data, client['user']);
         return true;
     }
 
     @SubscribeMessage('endVideo')
     async handleVideoEndPart(@ConnectedSocket() client: Socket): Promise<void> {
-        this.gcsService.endVideoStream(client['user'].id);
+        this.gcsService.endVideoStream(client['user']);
         console.log(`${client['user'].email} video saved`);
     }
 }
