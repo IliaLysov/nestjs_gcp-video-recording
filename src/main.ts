@@ -47,7 +47,7 @@ async function bootstrap() {
         }),
     );
 
-    await app.listen(3000, async () => {
+    await app.listen(process.env.PORT || 8080, async () => {
         console.log(`Server started on ${getMainUrl()}`);
     });
 }

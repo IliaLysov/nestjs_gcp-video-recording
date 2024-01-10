@@ -1,4 +1,3 @@
 node_modules
 .git
 Dockerfile
-gcp-service-account.json

@@ -11,9 +11,13 @@ export const primaryAddress = () => {
 };
 
 export const getMainUrl = () => {
+    if (process.env.NODE_ENV === 'production')
+        return `https://${process.env.HOST}`;
     return `https://${primaryAddress()}:${process.env.PORT}`;
 };
 
 export const getMainWsUrl = () => {
+    if (process.env.NODE_ENV === 'production')
+        return `wss://${process.env.HOST}`;
     return `wss://${primaryAddress()}:${process.env.PORT}`;
 };

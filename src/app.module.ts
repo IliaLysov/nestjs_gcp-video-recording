@@ -10,6 +10,8 @@ import { GcsModule } from './gcs/gcs.module';
 import { EmailModule } from './email/email.module';
 import { VideoModule } from './video/video.module';
 
+const ENV = process.env.NODE_ENV;
+
 @Global()
 @Module({
     imports: [
@@ -22,7 +24,10 @@ import { VideoModule } from './video/video.module';
                 synchronize: true,
             }),
         }),
-        ConfigModule.forRoot(),
+        ConfigModule.forRoot({
+            envFilePath: `.env.${ENV}`,
+            isGlobal: true,
+        }),
         JwtModule.registerAsync({
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => {
