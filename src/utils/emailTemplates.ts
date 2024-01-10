@@ -1,9 +1,11 @@
 export const emailTemplates = {
     VIDEO_LINK: (link: string, email: string, sourceEmail: string) => {
-        const destinationName = email.split('@')[0].toUpperCase();
+        const emailName = email.split('@')[0];
+        const destinationName =
+            emailName.charAt(0).toUpperCase() + emailName.slice(1);
         const appName = process.env.APP_NAME;
         return `
-            <h2 style="color: #333;">${appName} - Cloud Video Recording Notification</h2>
+            <h2 style="color: #333;">${appName} - Notification</h2>
 
             <p>Dear ${destinationName},</p>
 

@@ -1,9 +1,13 @@
 import { Controller, Get, Param, Render, UseGuards } from '@nestjs/common';
 import { getMainUrl, getMainWsUrl } from './utils/url';
 import { JwtAuthGuard } from './auth/jwtStrategy/jwt-auth.guard';
+import { decryptString } from './utils/crypto';
+import { VideoService } from './video/video.service';
 
 @Controller()
 export class AppController {
+    constructor(private videoService: VideoService) {}
+
     @Get('signin')
     @Render('signin')
     signIn() {
@@ -34,8 +38,17 @@ export class AppController {
     @Get('download/:videoToken')
     @Render('download')
     download(@Param('videoToken') videoToken: string) {
-        return {
-            downloadUrl: `${getMainUrl()}/video/download/${videoToken}`,
-        };
+        try {
+            const videoName = decryptString(videoToken);
+            this.videoService.getVideoInfo(videoName);
+
+            return {
+                downloadUrl: `${getMainUrl()}/video/download/${videoToken}`,
+            };
+        } catch (error) {
+            return {
+                error: 'Invalid video token',
+            };
+        }
     }
 }

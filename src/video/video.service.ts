@@ -43,4 +43,8 @@ export class VideoService {
             html,
         );
     }
+
+    async getVideoInfo(videoName: string): Promise<Video> {
+        return this.videoRepository.findOneBy({ name: videoName });
+    }
 }
