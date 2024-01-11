@@ -203,6 +203,9 @@
           connectionDiv.textContent = 'Offline';
           connectionDiv.classList.replace('online', 'offline');
         });
+        socket.on('storageLimitExceeded', () => {
+          alert('Storage limit exceeded');
+        });
       }
     }
 

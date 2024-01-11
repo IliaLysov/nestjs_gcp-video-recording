@@ -23,12 +23,18 @@ export class AuthController {
     @Post('login')
     async login(@Req() req, @Res() res) {
         const accessToken = await this.authService.login(req.user);
+        const currentDate = new Date();
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
             secure: true,
             sameSite: 'strict',
+            expires: new Date(
+                currentDate.getFullYear() + 10,
+                currentDate.getMonth(),
+                currentDate.getDate(),
+            ),
         });
-        res.redirect('/video');
+        res.redirect('/');
     }
 
     @Post('send-code')

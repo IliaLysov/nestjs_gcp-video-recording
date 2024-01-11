@@ -1,9 +1,12 @@
 import { Bucket, DownloadResponse, Storage } from '@google-cloud/storage';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { EmailService } from 'src/email/email.service';
+import { Video } from 'src/entities/video.entity';
 import { UserInfo } from 'src/utils/types';
-import { VideoService } from 'src/video/video.service';
 import { Writable } from 'stream';
+import { Repository } from 'typeorm';
 
 type StreamInfo = {
     stream: Writable;
@@ -16,17 +19,19 @@ export class GcsService {
     private readonly storage: Storage;
     private readonly bucket: Bucket;
 
-    // private cloudFilesDeletionTimers: Map<string, NodeJS.Timeout> = new Map();
     private pendingFinishStreamTimers: Map<string, NodeJS.Timeout> = new Map();
 
     private streamsInfoMap: Map<string, StreamInfo> = new Map();
 
     private readonly timeout: number = 30000; // 30 seconds
-    private readonly timeToKeepFiles: number = 1000 * 60 * 60 * 24 * 1; // 1 days
+
+    private readonly maxFileSize: number = 100000000; // 100 MB
 
     constructor(
+        @InjectRepository(Video)
+        private videoRepository: Repository<Video>,
         private configService: ConfigService,
-        private videoService: VideoService,
+        private emailService: EmailService,
     ) {
         this.storage = new Storage({
             projectId: this.configService.get('GCS_PROJECT_ID'),
@@ -73,6 +78,10 @@ export class GcsService {
         streamInfo.stream.write(chunk);
         streamInfo.size += chunk.byteLength;
 
+        if (streamInfo.size > this.maxFileSize) {
+            this.endVideoStream(user);
+        }
+
         this.resetTimer(user);
     }
 
@@ -85,28 +94,20 @@ export class GcsService {
         this.pendingFinishStreamTimers.delete(user.id);
         console.log(`Stream ends for ${user.id}`);
 
-        this.videoService.saveVideoInfoToDB(
-            user.id,
-            streamInfo.fileName,
-            streamInfo.size,
-        );
+        this.videoRepository.save({
+            user: {
+                id: user.id,
+            },
+            name: streamInfo.fileName,
+            size: streamInfo.size,
+        });
 
-        this.videoService.sendDeepLinkToEmail(user.email, streamInfo.fileName);
+        this.emailService.sendDeepLinkToEmail(user.email, streamInfo.fileName);
     }
 
-    // private deleteFile(fileName: string): void {
-    //     this.bucket.file(fileName).delete();
-    //     this.videoService.delete(fileName);
-    // }
-
-    // private deleteFileWithDelay(fileName: string): void {
-    //     const timer = setTimeout(() => {
-    //         this.deleteFile(fileName);
-    //         this.cloudFilesDeletionTimers.delete(fileName);
-    //     }, this.timeToKeepFiles);
-
-    //     this.cloudFilesDeletionTimers.set(fileName, timer);
-    // }
+    deleteFile(fileName: string): void {
+        this.bucket.file(fileName).delete();
+    }
 
     getVideoFromGcs(fileName: string): Promise<DownloadResponse> {
         return this.bucket.file(fileName).download();

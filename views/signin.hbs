@@ -29,5 +29,34 @@
     <div class="bottom">
         <p>Don't have an account? <a href="signup">Sign up</a></p>
     </div>
+    <script>
+        const form = document.querySelector('form');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+            const email = formData.get('email');
+            const password = formData.get('password');
+
+            try {
+                const response = await fetch('{{ signInUrl }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({email, password}),
+                })
+
+                if (response.status === 200) {
+                    window.location.href = '/';
+                } else {
+                    alert('Invalid credentials');
+                }
+            } catch (error) {
+                alert(error.message)
+            }
+        })
+    </script>
 </body>
 </html>

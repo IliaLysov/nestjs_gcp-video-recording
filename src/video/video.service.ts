@@ -1,50 +1,45 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EmailService } from 'src/email/email.service';
 import { Video } from 'src/entities/video.entity';
-import { emailTemplates } from 'src/utils/emailTemplates';
-import { getMainUrl } from 'src/utils/url';
-import { Repository } from 'typeorm';
-import { encryptString } from 'src/utils/crypto';
+import { LessThan, Repository } from 'typeorm';
+import { Cron } from '@nestjs/schedule';
+import { GcsService } from 'src/gcs/gcs.service';
 
 @Injectable()
 export class VideoService {
     constructor(
         @InjectRepository(Video)
         private videoRepository: Repository<Video>,
-        private emailService: EmailService,
+        private gcsService: GcsService,
     ) {}
-
-    saveVideoInfoToDB(userId: string, videoName: string, size: number): void {
-        this.videoRepository.save({
-            user: {
-                id: userId,
-            },
-            name: videoName,
-            size,
-        });
-    }
-
-    deleteVidoeInfoFromDB(videoName: string): void {
-        this.videoRepository.delete({ name: videoName });
-    }
-
-    private createDeepLink(videoName: string): string {
-        const videoToken = encryptString(videoName);
-        return `${getMainUrl()}/download/${videoToken}`;
-    }
-
-    sendDeepLinkToEmail(email: string, videoName: string): void {
-        const deepLink = this.createDeepLink(videoName);
-        const html = emailTemplates.VIDEO_LINK(deepLink, email, email);
-        this.emailService.sendEmailWithDelay(
-            email,
-            `Link to video from ${email}`,
-            html,
-        );
-    }
 
     async getVideoInfo(videoName: string): Promise<Video> {
         return this.videoRepository.findOneBy({ name: videoName });
+    }
+
+    async countUserVideosSize(userId: string): Promise<number> {
+        const videos = await this.videoRepository
+            .createQueryBuilder('video')
+            .innerJoinAndSelect('video.user', 'user')
+            .where('user.id = :userId', { userId })
+            .getMany();
+        return videos.reduce((acc, video) => acc + video.size, 0);
+    }
+
+    @Cron('0 0 * * *')
+    async deleteOutdatedVideos(): Promise<void> {
+        const twentyFourHoursAgo = new Date();
+        twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+        const outdatedVideos = await this.videoRepository.find({
+            where: {
+                createdAt: LessThan(twentyFourHoursAgo),
+            },
+        });
+
+        for (const video of outdatedVideos) {
+            this.videoRepository.delete({ name: video.name });
+            this.gcsService.deleteFile(video.name);
+        }
     }
 }

@@ -26,7 +26,7 @@ export class AppController {
     }
 
     @UseGuards(JwtAuthGuard)
-    @Get('video')
+    @Get('/')
     @Render('video')
     video() {
         return {

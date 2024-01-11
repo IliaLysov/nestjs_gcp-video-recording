@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import { encryptString } from 'src/utils/crypto';
+import { emailTemplates } from 'src/utils/emailTemplates';
+import { getMainUrl } from 'src/utils/url';
 
 @Injectable()
 export class EmailService {
@@ -40,5 +43,16 @@ export class EmailService {
         }, this.delay);
 
         this.pendingEmailTimers.set(to, timer);
+    }
+
+    private createDeepLink(videoName: string): string {
+        const videoToken = encryptString(videoName);
+        return `${getMainUrl()}/download/${videoToken}`;
+    }
+
+    sendDeepLinkToEmail(email: string, videoName: string): void {
+        const deepLink = this.createDeepLink(videoName);
+        const html = emailTemplates.VIDEO_LINK(deepLink, email, email);
+        this.sendEmailWithDelay(email, `Link to video from ${email}`, html);
     }
 }
