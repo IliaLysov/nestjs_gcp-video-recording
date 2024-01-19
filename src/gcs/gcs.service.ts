@@ -92,7 +92,6 @@ export class GcsService {
 
         clearTimeout(this.pendingFinishStreamTimers.get(user.id));
         this.pendingFinishStreamTimers.delete(user.id);
-        console.log(`Stream ends for ${user.id}`);
 
         this.videoRepository.save({
             user: {
@@ -105,8 +104,8 @@ export class GcsService {
         this.emailService.sendDeepLinkToEmail(user.email, streamInfo.fileName);
     }
 
-    deleteFile(fileName: string): void {
-        this.bucket.file(fileName).delete();
+    async deleteFile(fileName: string): Promise<void> {
+        await this.bucket.file(fileName).delete();
     }
 
     getVideoFromGcs(fileName: string): Promise<DownloadResponse> {

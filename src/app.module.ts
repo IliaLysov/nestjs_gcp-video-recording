@@ -9,12 +9,14 @@ import { JwtModule } from '@nestjs/jwt';
 import { GcsModule } from './gcs/gcs.module';
 import { EmailModule } from './email/email.module';
 import { VideoModule } from './video/video.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 const ENV = process.env.NODE_ENV;
 
 @Global()
 @Module({
     imports: [
+        ScheduleModule.forRoot(),
         TypeOrmModule.forRootAsync({
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => ({

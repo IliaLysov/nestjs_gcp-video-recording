@@ -20,4 +20,9 @@ export class VideoController {
         const [Buffer] = await this.gcsService.getVideoFromGcs(videoName);
         res.send(Buffer);
     }
+
+    @Get('clean')
+    async clean() {
+        await this.videoService.deleteOutdatedVideos();
+    }
 }

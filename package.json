@@ -1,10 +1,10 @@
 {
-  "name": "fuse-back",
+  "name": "cloud-video-recorder",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "A simple yet powerful web application that allows you to record videos directly to the cloud and receive a download link via email.",
+  "author": "Ilia Lysov",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

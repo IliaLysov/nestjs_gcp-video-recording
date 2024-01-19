@@ -35,7 +35,6 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const userFilesSize = await this.videoService.countUserVideosSize(
             user.id,
         );
-        console.log(userFilesSize);
         if (userFilesSize > this.maxStorageSize) {
             client.emit('storageLimitExceeded');
             client.disconnect();
@@ -61,7 +60,6 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
         );
         const maxSize = 100000;
         if (data.length > maxSize) {
-            console.error('part too big');
             return false;
         }
         this.gcsService.uploadVideoChunk(data, client['user']);
