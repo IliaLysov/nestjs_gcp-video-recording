@@ -4,7 +4,6 @@ WORKDIR ./app
 COPY package*.json .
 RUN npm install
 COPY . .
-COPY .env .
 RUN npm run build
 
 FROM node:20.10-alpine3.18
@@ -14,6 +13,5 @@ RUN npm install --only=production
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/views ./views
 COPY --from=build /app/public ./public
-COPY .env .
-EXPOSE 3000
+COPY .env.production .
 CMD npm run start:prod
