@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Controller, Get, Logger, Param, Res } from '@nestjs/common';
 import { VideoService } from './video.service';
 import { GcsService } from 'src/gcs/gcs.service';
 import { decryptString } from 'src/utils/crypto';
@@ -6,6 +6,8 @@ import { Response } from 'express';
 
 @Controller('video')
 export class VideoController {
+    private readonly logger = new Logger(VideoController.name);
+
     constructor(
         private videoService: VideoService,
         private gcsService: GcsService,
@@ -23,6 +25,10 @@ export class VideoController {
 
     @Get('clean')
     async clean() {
-        await this.videoService.deleteOutdatedVideos();
+        try {
+            await this.videoService.deleteOutdatedVideos();
+        } catch (error) {
+            this.logger.error(`Error cleaning videos: ${error.message}`);
+        }
     }
 }

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Video } from 'src/entities/video.entity';
-import { LessThan, Repository } from 'typeorm';
+import { In, LessThan, Repository } from 'typeorm';
 import { GcsService } from 'src/gcs/gcs.service';
 
 @Injectable()
@@ -41,7 +41,7 @@ export class VideoService {
 
         videoNames.forEach(async (videoName) => {
             await this.gcsService.deleteFile(videoName);
-            await this.videoRepository.delete({ name: videoName });
         });
+        this.videoRepository.delete({ name: In(videoNames) });
     }
 }
